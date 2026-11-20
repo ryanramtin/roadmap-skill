@@ -318,12 +318,12 @@ function renderDash(){
   h+='<div class="top"><div><h1>'+esc(TTL())+'</h1><div class="sub">'+esc(windowLabel())+' \u00B7 derived from what agents actually did'+(narrNote()?' \u00B7 '+narrNote():'')+'</div></div><div class="tools"><span class="stamp" id="stamp"><span class="dot"></span><span></span></span>'
    +(SERVED?'<button id="btnRefresh">Refresh now</button>':'')
    +'<button id="btnDeck">Deck view</button><button id="btnTheme" title="Toggle theme">Theme</button></div></div>';
-  h+='<p class="note"><b>'+(100-cov)+'% of activity is unattributed</b> ('+cov+'% tied to a project: '+fmt(m.sources.mem_obs)+' memory observations, '+fmt(m.sources.git_commits)+' commits, '+fmt(m.sources.ship_entries)+' ship entries).'
+  h+='<p class="note">'+(m.focus?'<b>These workstreams are '+cov+'% of all logged agent activity</b> (of ':'<b>'+(100-cov)+'% of activity is unattributed</b> ('+cov+'% tied to a project: ')+'+fmt(m.sources.mem_obs)+' memory observations, '+fmt(m.sources.git_commits)+' commits, '+fmt(m.sources.ship_entries)+' ship entries).'
    +(m.suspect_backfill_rows?' '+fmt(m.suspect_backfill_rows)+' rows excluded as suspected backfill.':'')
    +((m.redactions&&m.redactions.total)?' '+m.redactions.total+' text items withheld by the privacy filter.':'')+'</p>';
   h+=kpiTiles();
   h+='<section><div class="g-head"><div><h2>'+esc(topHeadline())+'</h2></div><div class="tools"><button id="gChart" aria-pressed="'+!gTable+'">Chart</button><button id="gTbl" aria-pressed="'+gTable+'">Table</button></div></div>';
-  h+='<p class="lede">Portfolio Gantt. Each lane is a project; cells are weeks, shaded by activity relative to that project\u2019s busiest week.</p>';
+  h+='<p class="lede">'+(m.focus?'Workstream Gantt. Each lane is a workstream':'Portfolio Gantt. Each lane is a project')+'; cells are weeks, shaded by activity relative to that lane\u2019s busiest week.</p>';
   if(gTable) h+=ganttTable(); else { h+='<div style="margin-bottom:8px">'+ganttLegend()+'</div>';
     var avail=Math.max(300,(Math.min(1200,window.innerWidth)-32)-150), n=weekList().length, cw=Math.max(14,Math.min(34,Math.floor(avail/n)));
     h+='<div class="g-scroll">'+gantt(lanesFor(14),{cw:cw,laneH:38})+'</div>'; }
