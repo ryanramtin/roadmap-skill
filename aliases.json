@@ -1,0 +1,283 @@
+{
+  "_doc": "Canonical project -> match rules. 'exact' = claude-mem/shiplog project names (case-insensitive). 'prefix' = name starts with. 'keywords' = word-boundary match in observation titles, used ONLY to attribute rows from the unattributed home-dir bucket. 'repos' = git repo paths for commit-based activity spans. 'drop' = junk buckets folded into Unattributed. Edit freely; collect.py reloads it every run.",
+  "projects": {
+    "Ok Stewie": {
+      "exact": [
+        "homebot",
+        "Ok Stewie",
+        "ryanramtin/Ok-Stewie",
+        "ok-stewie-mobile",
+        "ryanramtin/ok-stewie-mobile",
+        "ok-stewie-android",
+        "sam-harbor",
+        "stewie-deck",
+        "ok-stewie-governance-ui",
+        "security-approval"
+      ],
+      "prefix": [
+        "ok-stewie",
+        "okstewie"
+      ],
+      "keywords": [
+        "homebot",
+        "stewie",
+        "ok stewie"
+      ],
+      "repos": [
+        "~/homebot",
+        "~/ok-stewie-mobile"
+      ]
+    },
+    "NxtSteps": {
+      "exact": [
+        "NxtStepsai",
+        "nxtsteps-v2",
+        "NxtSteps-mobile",
+        "NxtSteps-mobile-integration",
+        "Portal",
+        "security-sweep-2026-11-04"
+      ],
+      "prefix": [
+        "nxtsteps",
+        "v2-pr",
+        "wt-km-"
+      ],
+      "keywords": [
+        "nxtsteps",
+        "nxt steps"
+      ],
+      "repos": [
+        "~/Desktop/Development Projects/nxtsteps-v2",
+        "~/Desktop/Development Projects/NxtSteps-mobile",
+        "~/Desktop/Development Projects/nxtsteps-ai",
+        "~/Desktop/Development Projects/nxtsteps-mac",
+        "~/Core Projects/NxtSteps-mobile"
+      ]
+    },
+    "PipelineIQ": {
+      "exact": [
+        "pipelineIQ",
+        "pipelineIQiOS",
+        "piq-web-redesign"
+      ],
+      "prefix": [
+        "pipelineiq",
+        "piq-"
+      ],
+      "keywords": [
+        "pipelineiq",
+        "pipeline iq"
+      ],
+      "repos": [
+        "~/Desktop/Development Projects/pipelineiq",
+        "~/Desktop/Development Projects/pipelineIQiOS",
+        "~/Core Projects/Pipeline-IQ-iOS"
+      ]
+    },
+    "Vid2Skill": {
+      "exact": [
+        "Vid2Skill",
+        "Vid2Skill Mobile",
+        "vid2skill-brag"
+      ],
+      "prefix": [
+        "vid2skill"
+      ],
+      "keywords": [
+        "vid2skill"
+      ],
+      "repos": [
+        "~/Desktop/Development Projects/vid2skill",
+        "~/Core Projects/Vid2Skill Mobile"
+      ]
+    },
+    "Pin2Save": {
+      "exact": [
+        "Pin2Save"
+      ],
+      "prefix": [
+        "pin2save"
+      ],
+      "keywords": [
+        "pin2save"
+      ],
+      "repos": []
+    },
+    "ReputationIQ": {
+      "exact": [
+        "ReputationIQ"
+      ],
+      "prefix": [
+        "reputationiq"
+      ],
+      "keywords": [
+        "reputationiq"
+      ],
+      "repos": [
+        "~/Desktop/Development Projects/ReputationIQ",
+        "~/Development/ReputationIQ-ios"
+      ]
+    },
+    "Token Intell": {
+      "exact": [
+        "token-intell",
+        "TokenIntell-Pitch",
+        "Int3ll",
+        "TokenBonfire",
+        "tokenbonfire"
+      ],
+      "prefix": [
+        "token-intell",
+        "tokenintell",
+        "tokenbonfire"
+      ],
+      "keywords": [
+        "token intell",
+        "token-intell",
+        "int3ll",
+        "tokenbonfire",
+        "token bonfire"
+      ],
+      "repos": [
+        "~/Desktop/Projects/token-intell",
+        "~/Desktop/Projects/TokenBonfire"
+      ],
+      "_note": "TokenBonfire rebranded to Token Intell (2026-09-13); one lane"
+    },
+    "AppGumbo": {
+      "exact": [
+        "AppGumbo"
+      ],
+      "prefix": [],
+      "keywords": [
+        "appgumbo"
+      ],
+      "repos": [
+        "~/Desktop/Development Projects/appgumbo"
+      ]
+    },
+    "TokSkill": {
+      "exact": [
+        "TokSkill"
+      ],
+      "prefix": [],
+      "keywords": [
+        "tokskill"
+      ],
+      "repos": [
+        "~/Desktop/Projects/TokSkill"
+      ]
+    },
+    "Keepsake": {
+      "exact": [
+        "keepsake-integ",
+        "keepsake-mobile"
+      ],
+      "prefix": [
+        "keepsake"
+      ],
+      "keywords": [
+        "keepsake"
+      ],
+      "repos": [
+        "~/Documents/Keepsake"
+      ]
+    },
+    "SongSnipe": {
+      "exact": [
+        "SongSnipe"
+      ],
+      "prefix": [],
+      "keywords": [
+        "songsnipe"
+      ],
+      "repos": [
+        "~/Desktop/Development Projects/songsnipe-web",
+        "~/Documents/SongSnipe"
+      ]
+    },
+    "CarveIQ": {
+      "exact": [],
+      "prefix": [
+        "carveiq"
+      ],
+      "keywords": [
+        "carveiq"
+      ],
+      "repos": [
+        "~/Desktop/Projects/carveiq"
+      ]
+    },
+    "scAmerica": {
+      "exact": [],
+      "prefix": [
+        "scamerica",
+        "scameri"
+      ],
+      "keywords": [
+        "scamerica",
+        "scameri.ca"
+      ],
+      "repos": [
+        "~/Desktop/Projects/scAmerica.com",
+        "~/Desktop/Projects/scAmeri.ca"
+      ]
+    },
+    "Headwind": {
+      "exact": [
+        "headwind-review"
+      ],
+      "prefix": [
+        "headwind"
+      ],
+      "keywords": [
+        "headwind"
+      ],
+      "repos": [
+        "~/Desktop/Projects/Headwind"
+      ]
+    },
+    "CampStack": {
+      "exact": [
+        "CampStack"
+      ],
+      "prefix": [],
+      "keywords": [
+        "campstack"
+      ],
+      "repos": []
+    },
+    "AppNest": {
+      "exact": [],
+      "prefix": [
+        "appnest"
+      ],
+      "keywords": [
+        "appnest"
+      ],
+      "repos": [
+        "~/Desktop/Projects/AppNest"
+      ]
+    }
+  },
+  "drop": [
+    "ryancramtin",
+    "New project",
+    "Desktop",
+    "Development Projects",
+    "dev",
+    "spike",
+    "mockups",
+    "artifacts",
+    "code-task-sandbox",
+    "tmp",
+    "scratchpad",
+    "memory",
+    "AI-Optimized",
+    "ai-optimized"
+  ],
+  "drop_patterns": [
+    "^[a-z]+-[a-z]+-[0-9a-f]{6}$",
+    "^ship-mcp-"
+  ]
+}
