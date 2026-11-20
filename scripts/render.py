@@ -318,7 +318,7 @@ function renderDash(){
   h+='<div class="top"><div><h1>'+esc(TTL())+'</h1><div class="sub">'+esc(windowLabel())+' \u00B7 derived from what agents actually did'+(narrNote()?' \u00B7 '+narrNote():'')+'</div></div><div class="tools"><span class="stamp" id="stamp"><span class="dot"></span><span></span></span>'
    +(SERVED?'<button id="btnRefresh">Refresh now</button>':'')
    +'<button id="btnDeck">Deck view</button><button id="btnTheme" title="Toggle theme">Theme</button></div></div>';
-  h+='<p class="note">'+(m.focus?'<b>These workstreams are '+cov+'% of all logged agent activity</b> (of ':'<b>'+(100-cov)+'% of activity is unattributed</b> ('+cov+'% tied to a project: ')+'+fmt(m.sources.mem_obs)+' memory observations, '+fmt(m.sources.git_commits)+' commits, '+fmt(m.sources.ship_entries)+' ship entries).'
+  h+='<p class="note">'+(m.focus?'<b>These workstreams are '+cov+'% of all logged agent activity</b> (of ':'<b>'+(100-cov)+'% of activity is unattributed</b> ('+cov+'% tied to a project: ')+fmt(m.sources.mem_obs)+' memory observations, '+fmt(m.sources.git_commits)+' commits, '+fmt(m.sources.ship_entries)+' ship entries).'
    +(m.suspect_backfill_rows?' '+fmt(m.suspect_backfill_rows)+' rows excluded as suspected backfill.':'')
    +((m.redactions&&m.redactions.total)?' '+m.redactions.total+' text items withheld by the privacy filter.':'')+'</p>';
   h+=kpiTiles();
