@@ -53,6 +53,15 @@ Data stays computed (scripts). Opus adds only the **director narrative**: takeaw
    Run it in the background (`run_in_background`) if the user wants it up. For always-on, offer a launchd agent and only install it if they say yes. The narrative stays from the last time Opus wrote it, and the numbers keep refreshing.
 7. **Sharing**: the deck prints to PDF (one slide per page, landscape). Offer an Artifact publish in one line. **Don't auto-publish**, since this is personal cross-project data.
 
+## Focus mode (one project, split into workstreams)
+```bash
+python3 scripts/collect.py --out ~/.roadmap/ok-stewie --since 2026-07-01 \
+  --aliases focus-ok-stewie.json --title "Ok Stewie Roadmap"
+python3 scripts/render.py --out ~/.roadmap/ok-stewie
+# live: serve.py --out ~/.roadmap/ok-stewie --aliases focus-ok-stewie.json --title "Ok Stewie Roadmap"
+```
+A focus file is a lane map like aliases.json, with `drop_patterns: [".*"]` so everything else stays off the board. KPIs, momentum and agent mix are scoped to the listed lanes, and the copy says "workstreams". Write the focus narrative into that out dir. Copy `focus-ok-stewie.json` to make one for another project.
+
 ## Hard rules
 - **Privacy:** collect.py drops SAM / companion / private-mode text by default (denylist constant `REDACT_DENYLIST` / `DENY_RE` in collect.py; redacted items still count in every total, only their text is withheld), and masks emails, phones and tokens. Never pass `--no-redact` when the output will be published. SAM content never goes into Artifacts.
 - **Read-only:** the claude-mem DB opens with `mode=ro` and git is `log` only. Never write to repos, ATTIC or the mem DB.

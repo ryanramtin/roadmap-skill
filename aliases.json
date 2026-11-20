@@ -9,7 +9,6 @@
         "ok-stewie-mobile",
         "ryanramtin/ok-stewie-mobile",
         "ok-stewie-android",
-        "sam-harbor",
         "stewie-deck",
         "ok-stewie-governance-ui",
         "security-approval"
@@ -274,7 +273,8 @@
     "scratchpad",
     "memory",
     "AI-Optimized",
-    "ai-optimized"
+    "ai-optimized",
+    "sam-harbor"
   ],
   "drop_patterns": [
     "^[a-z]+-[a-z]+-[0-9a-f]{6}$",
