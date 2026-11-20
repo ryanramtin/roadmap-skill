@@ -1,0 +1,24 @@
+{
+  "_doc": "Focus lane map: Ok Stewie split into workstreams. Use: build.sh-equivalent with --aliases focus-ok-stewie.json --title 'Ok Stewie Roadmap'.",
+  "projects": {
+    "Backend (homebot)": {
+      "exact": ["homebot", "ryanramtin/Ok-Stewie", "security-approval", "Ok Stewie"],
+      "prefix": [], "keywords": ["homebot"], "repos": ["~/homebot"]
+    },
+    "iOS + web app": {
+      "exact": ["ok-stewie-mobile", "ryanramtin/ok-stewie-mobile"],
+      "prefix": ["ok-stewie-mobile"], "keywords": ["ok-stewie-mobile", "stewie ios", "stewie v2 ios", "stewie v2 web"], "repos": ["~/ok-stewie-mobile"]
+    },
+    "Android": {
+      "exact": ["ok-stewie-android"], "prefix": ["ok-stewie-android"], "keywords": ["stewie android"], "repos": []
+    },
+    "Governance UI": {
+      "exact": ["ok-stewie-governance-ui"], "prefix": ["ok-stewie-governance"], "keywords": ["governance ui"], "repos": ["~/Desktop/Projects/ok-stewie-governance-ui"]
+    },
+    "Stewie (cross-cutting)": {
+      "exact": ["stewie-deck"], "prefix": ["okstewie"], "keywords": ["stewie", "ok stewie"], "repos": []
+    }
+  },
+  "drop": ["ryancramtin", "sam-harbor", "New project", "Desktop", "Development Projects", "dev", "spike", "mockups", "artifacts", "code-task-sandbox", "tmp", "scratchpad", "memory"],
+  "drop_patterns": [".*"]
+}

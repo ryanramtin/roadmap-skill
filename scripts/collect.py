@@ -20,6 +20,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(HERE)
 ALIASES = os.path.join(SKILL, "aliases.json")
+DEFAULT_ALIASES = ALIASES
 MEM_DB = os.path.expanduser("~/.claude-mem/claude-mem.db")
 SHIPLOG = os.path.expanduser("~/.local/bin/shiplog")
 TOMB_GLOBS = ["~/Desktop/Projects/*.ARCHIVED.txt", "~/Desktop/Projects/*.ARCHIVED"]
@@ -559,6 +560,25 @@ def build(args):
             "pct": round((pl4 - pp4) * 100.0 / pp4) if pp4 >= MIN_BASE else None,
             "last4_weeks": [CW[3], CW[0]], "prior4_weeks": [CW[7], CW[4]], "in_progress_week": wk(window_end), "min_baseline": MIN_BASE}
     agents = collections.Counter((s.get("agent") or "unknown").lower() for s in ships)
+    # scoped numbers: only the listed lanes (used by the renderer in focus mode)
+    swk = collections.Counter()
+    for p in projects:
+        for w, wv in p["weeks"].items():
+            swk[w] += wv["mem"]
+    swk = {k: v for k, v in swk.items() if v > 0}
+    sl4 = sum(swk.get(w, 0) for w in CW[:4])
+    sp4 = sum(swk.get(w, 0) for w in CW[4:8])
+    sagents = collections.Counter()
+    for p in projects:
+        sagents.update(p["agents"])
+    scoped = {"unit": "memory observations in listed lanes", "weekly_mem_total": dict(sorted(swk.items())),
+              "momentum": {"unit": "memory observations in listed lanes", "last4": sl4, "prior4": sp4,
+                           "pct": round((sl4 - sp4) * 100.0 / sp4) if sp4 >= MIN_BASE else None,
+                           "last4_weeks": [CW[3], CW[0]], "prior4_weeks": [CW[7], CW[4]],
+                           "in_progress_week": wk(window_end), "min_baseline": MIN_BASE},
+              "ships_by_status": {k: sum(p["totals"][t] for p in projects) for k, t in (("shipped", "ships"), ("held", "held"), ("failed", "failed"))},
+              "ships_total": listed, "agents": dict(sagents)}
+    focus = os.path.abspath(ALIASES) != os.path.abspath(DEFAULT_ALIASES)
     # near-dup collapse: agents re-log the same decision ("…Full Feature Spec Received/Defined/Delivered")
     all_dec, seen_keys = [], set()
     for d in sorted([dict(d, project=p["name"]) for p in projects for d in p["decisions"]], key=lambda x: x["date"], reverse=True):
@@ -572,6 +592,8 @@ def build(args):
     coverage = round(mem["attributed"] / mem["total_obs"], 4) if mem["total_obs"] else 0
     meta = {
         "generated_at": now.astimezone().isoformat(timespec="seconds"),
+        "title": getattr(args, "title", None) or "Roadmap",
+        "focus": focus, "unit_label": "workstreams" if focus else "projects",
         "window_start": since.isoformat(), "window_end": window_end.isoformat(), "since_arg": args.since,
         "ships": {"total": ships_total, "in_listed_projects": listed, "unlisted": ships_total - listed},
         "current_week": wk(window_end),
@@ -586,7 +608,7 @@ def build(args):
                "portfolio": {"weekly_totals": dict(sorted(weekly.items())), "by_type_totals": dict(bytype),
                              "weekly_mem_total": dict(sorted(wmem.items())), "momentum": pmom,
                              "ships_total": ships_total,
-                             "ships_by_status": dict(ship_status), "agents": dict(agents), "decisions": all_dec}}
+                             "ships_by_status": dict(ship_status), "agents": dict(agents), "scoped": scoped, "decisions": all_dec}}
     meta["timing"]["total"] = round(time.time() - t0, 2)
     atomic_write(os.path.join(out, "digest.md"), make_digest(roadmap))
     atomic_write(os.path.join(out, "roadmap.json"), json.dumps(roadmap, indent=1))
@@ -653,7 +675,12 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--since", default="180d")
     ap.add_argument("--no-redact", action="store_true")
+    ap.add_argument("--aliases", help="alternate lane map (e.g. a single-project focus file); default aliases.json")
+    ap.add_argument("--title", default="Roadmap", help="page/deck title")
     a = ap.parse_args()
+    global ALIASES
+    if a.aliases:
+        ALIASES = os.path.abspath(os.path.expanduser(a.aliases))
     R = build(a)
     m = R["meta"]
     print("collect ok: %d projects, coverage %.1f%%, suspect rows %d, redactions %s, timing %s"

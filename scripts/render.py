@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Render <out>/index.html from <out>/roadmap.json (+ optional narrative.json). Stdlib only."""
+import html as _html
 import argparse
 import json
 import os
@@ -162,9 +163,9 @@ var arr=function(x){return Array.isArray(x)?x:(x?[x]:[])};
 function agoStr(ms){var s=Math.max(0,(Date.now()-ms)/1000);if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'}
 function sum(P,f){return P.reduce(function(a,p){return a+f(p)},0)}
 function kpis(){
-  var P=D.projects, pm=D.portfolio.momentum||{};
-  var sb=D.portfolio.ships_by_status||{};
-  var shipsAll=D.portfolio.ships_total!=null?D.portfolio.ships_total:sum(Object.keys(sb),function(k){return sb[k]});
+  var P=D.projects, sc=FOC()?(D.portfolio.scoped||{}):null, pm=(sc&&sc.momentum)||D.portfolio.momentum||{};
+  var sb=(sc&&sc.ships_by_status)||D.portfolio.ships_by_status||{};
+  var shipsAll=sc&&sc.ships_total!=null?sc.ships_total:(D.portfolio.ships_total!=null?D.portfolio.ships_total:sum(Object.keys(sb),function(k){return sb[k]}));
   return {active:P.filter(function(p){return stat(p)==='active'}).length,total:P.length,
     ships:shipsAll,shipped:sb.shipped||0,held:(sb.held||0)+(sb.failed||0),features:sum(P,function(p){return p.totals.features}),bugfixes:sum(P,function(p){return p.totals.bugfixes}),
     decisions:sum(P,function(p){return p.totals.decisions}),mom:pm.pct==null?null:pm.pct,l4:pm.last4||0,p4:pm.prior4||0};
@@ -195,14 +196,20 @@ function topHeadline(){
   if(N.headline) return N.headline;
   var s=share()[0]; if(!s) return 'No recorded activity in this window';
   var k=kpis();
-  return s.p.name+' carried '+s.pct+'% of the recorded work'+(k.ships?'; '+k.ships+' ships logged across the portfolio':'');
+  return s.p.name+' carried '+s.pct+'% of the recorded work'+(k.ships?'; '+k.ships+' ships logged '+(FOC()?'in these workstreams':'across the portfolio'):'');
+}
+function laneTitle(P,c){
+  var u=UL(),a=c('active'),q=c('dormant');
+  if(q>a) return q+' '+u+' have gone quiet while '+a+' carry the work';
+  if(q===0&&a===P.length&&FOC()){var s=share()[0];return 'All '+a+' '+u+' active'+(s?'; '+s.p.name+' carries most of the build':'')}
+  return a+' '+u+' are live'+(q?'; '+q+' have gone quiet':'');
 }
 function execBullets(){
   if(arr(N.exec_bullets).length) return arr(N.exec_bullets).slice(0,3);
   var P=D.projects,k=kpis(),c=function(s){return P.filter(function(p){return stat(p)===s}).length};
   var mv=movers(); var b=[];
-  b.push(P.length+' projects tracked: '+c('active')+' active, '+c('cooling')+' cooling, '+c('dormant')+' dormant, '+c('archived')+' archived.');
-  b.push(fmt(k.features)+' features, '+fmt(k.bugfixes)+' bugfixes and '+fmt(k.decisions)+' decisions recorded'+(k.mom!=null?'; portfolio momentum '+pctStr(k.mom)+' in memory-observation volume, last 4 complete weeks vs the 4 before.':'.'));
+  b.push(P.length+' '+UL()+' tracked: '+c('active')+' active, '+c('cooling')+' cooling, '+c('dormant')+' dormant, '+c('archived')+' archived.');
+  b.push(fmt(k.features)+' features, '+fmt(k.bugfixes)+' bugfixes and '+fmt(k.decisions)+' decisions recorded'+(k.mom!=null?'; '+(FOC()?'momentum':'portfolio momentum')+' '+pctStr(k.mom)+' in '+(FOC()?'memory-observation volume in these workstreams,':'memory-observation volume,')+' last 4 complete weeks vs the 4 before.':'.'));
   b.push((mv.up[0]?'Biggest climber: '+mv.up[0].p.name+'. ':'')+(mv.down[0]?'Biggest slide: '+mv.down[0].p.name+'. ':'')+Math.round((1-D.meta.coverage)*100)+'% of raw activity could not be tied to a project.');
   return b;
 }
@@ -285,7 +292,7 @@ function ganttTable(){
   return h+'</tbody></table></div>';
 }
 function colChart(w,h){
-  var WK=weekList(),wt=D.portfolio.weekly_mem_total||D.portfolio.weekly_totals||{},cur=D.meta.current_week,v=WK.map(function(x){return wt[x.key]||0}),mx=Math.max.apply(null,v.concat([1]));
+  var WK=weekList(),wt=(FOC()&&D.portfolio.scoped&&D.portfolio.scoped.weekly_mem_total)||D.portfolio.weekly_mem_total||D.portfolio.weekly_totals||{},cur=D.meta.current_week,v=WK.map(function(x){return wt[x.key]||0}),mx=Math.max.apply(null,v.concat([1]));
   var padL=44,padB=26,padT=14,cw=(w-padL)/WK.length,ch=h-padB-padT;
   var step=Math.pow(10,Math.floor(Math.log10(mx)));var top=Math.ceil(mx/step)*step;if(top/step>5)step*=2;
   var s='<svg width="'+w+'" height="'+h+'" role="img" aria-label="Weekly portfolio activity">';
@@ -302,13 +309,13 @@ function colChart(w,h){
 function kpiTiles(){
   var k=kpis(),t=function(v,l,d){return '<div class="kpi"><div class="v">'+v+'</div><div class="l">'+l+'</div>'+(d?'<div class="d">'+d+'</div>':'')+'</div>'};
   var mom=k.mom==null?'n/a':(k.mom>0?'\u25B2 ':(k.mom<0?'\u25BC ':'\u25AC '))+pctStr(k.mom);
-  return '<div class="kpis">'+t(k.active+'<span style="font-size:16px;color:var(--muted)"> / '+k.total+'</span>','Active projects','touched in last 7 days')+t(fmt(k.ships),'Ships logged','all shiplog rows in window: '+fmt(k.shipped)+' shipped, '+fmt(k.held)+' held/failed')+t(fmt(k.features),'Features')+t(fmt(k.bugfixes),'Bugfixes')+t(fmt(k.decisions),'Decisions')+t(mom,'Momentum','mem observations, last 4 complete wks vs prior 4')+'</div>';
+  return '<div class="kpis">'+t(k.active+'<span style="font-size:16px;color:var(--muted)"> / '+k.total+'</span>','Active '+UL(),'touched in last 7 days')+t(fmt(k.ships),'Ships logged',(FOC()?'shiplog rows in these workstreams: ':'all shiplog rows in window: ')+fmt(k.shipped)+' shipped, '+fmt(k.held)+' held/failed')+t(fmt(k.features),'Features')+t(fmt(k.bugfixes),'Bugfixes')+t(fmt(k.decisions),'Decisions')+t(mom,'Momentum',(FOC()?'mem observations in these lanes':'mem observations')+', last 4 complete wks vs prior 4')+'</div>';
 }
 
 /* ---------- dashboard ---------- */
 function renderDash(){
   var m=D.meta, cov=Math.round(m.coverage*100), h='';
-  h+='<div class="top"><div><h1>Roadmap</h1><div class="sub">'+esc(windowLabel())+' \u00B7 derived from what agents actually did'+(narrNote()?' \u00B7 '+narrNote():'')+'</div></div><div class="tools"><span class="stamp" id="stamp"><span class="dot"></span><span></span></span>'
+  h+='<div class="top"><div><h1>'+esc(TTL())+'</h1><div class="sub">'+esc(windowLabel())+' \u00B7 derived from what agents actually did'+(narrNote()?' \u00B7 '+narrNote():'')+'</div></div><div class="tools"><span class="stamp" id="stamp"><span class="dot"></span><span></span></span>'
    +(SERVED?'<button id="btnRefresh">Refresh now</button>':'')
    +'<button id="btnDeck">Deck view</button><button id="btnTheme" title="Toggle theme">Theme</button></div></div>';
   h+='<p class="note"><b>'+(100-cov)+'% of activity is unattributed</b> ('+cov+'% tied to a project: '+fmt(m.sources.mem_obs)+' memory observations, '+fmt(m.sources.git_commits)+' commits, '+fmt(m.sources.ship_entries)+' ship entries).'
@@ -335,9 +342,9 @@ function renderDash(){
     var t=p.totals,ex=t.discoveries,bd=t.features+t.bugfixes+t.changes+t.refactors,tt=ex+bd||1,pe=Math.round(ex*100/tt);
     h+='<div class="eb"><span class="nm">'+esc(p.name)+'</span><div class="bar2" role="img" aria-label="'+pe+'% explore, '+(100-pe)+'% build"><span style="width:'+(ex*100/tt)+'%;background:var(--s-explore)"></span><span style="width:'+(bd*100/tt)+'%;background:var(--s-exec)"></span></div><span class="pc2">'+pe+'% explore \u00B7 '+(100-pe)+'% build</span></div>'});
   h+='<div class="legend" style="margin-top:8px"><span><i class="sw" style="background:var(--s-explore)"></i>Explore (discoveries)</span><span><i class="sw" style="background:var(--s-exec)"></i>Execute (features, fixes, changes, refactors)</span></div></div>';
-  var ag=D.portfolio.agents||{},ak=Object.keys(ag).sort(function(a,b){return ag[b]-ag[a]}),at=sum(ak,function(k){return ag[k]})||1;
+  var ag=(FOC()&&D.portfolio.scoped&&D.portfolio.scoped.agents)||D.portfolio.agents||{},ak=Object.keys(ag).sort(function(a,b){return ag[b]-ag[a]}),at=sum(ak,function(k){return ag[k]})||1;
   h+='<div class="card"><h3 style="font-size:15px;margin-bottom:8px">Agent mix (shiplog)</h3>'+(ak.length?ak.map(function(k){return '<div class="eb"><span class="nm">'+esc(k)+'</span><div class="bar2"><span style="width:'+(ag[k]*100/at)+'%;background:var(--s-exec)"></span></div><span class="pc2">'+ag[k]+' ships \u00B7 '+Math.round(ag[k]*100/at)+'%</span></div>'}).join(''):'<p class="note">No shiplog entries.</p>')
-   +'<p class="note">All '+at+' shiplog rows in the window (same total as the Ships logged tile, attributed to a project or not). Memory observations carry no agent tag.</p></div></div>';
+   +'<p class="note">'+(FOC()?'The '+at+' shiplog rows in these workstreams (same total as the Ships logged tile).':'All '+at+' shiplog rows in the window (same total as the Ships logged tile, attributed to a project or not).')+' Memory observations carry no agent tag.</p></div></div>';
   var dl=(D.portfolio.decisions||[]).slice(0,10);
   h+='<div class="card" style="margin-top:12px"><h3 style="font-size:15px;margin-bottom:6px">Decisions log</h3>'+(dl.length?'<ul class="dec">'+dl.map(function(d){return '<li><span class="dt">'+esc(d.date)+'</span><span class="pj">'+esc(d.project)+'</span><span>'+esc(d.title)+'</span></li>'}).join('')+'</ul>':'<p class="note">No decisions recorded.</p>')+'</div></section>';
   h+='<p class="foot">Generated '+esc(m.generated_at)+' \u00B7 sources: claude-mem, shiplog, git \u00B7 text is privacy-filtered at collection time.</p>';
@@ -348,18 +355,18 @@ function bindDash(){
   var g=function(id,f){var e=$(id);if(e)e.addEventListener('click',f)};
   g('#gChart',function(){gTable=false;renderDash()});g('#gTbl',function(){gTable=true;renderDash()});
   g('#btnDeck',function(){setView('deck')});g('#btnTheme',cycleTheme);
-  g('#btnRefresh',function(){fetch('/refresh',{cache:'no-store'}).then(function(){return poll()}).catch(function(){})});
+  g('#btnRefresh',function(){fetch('/refresh',{cache:'no-store',headers:{'X-Roadmap':'1'}}).then(function(){return poll()}).catch(function(){})});
 }
 
 /* ---------- deck ---------- */
 function slideWrap(inner,cls){return {cls:cls||'',html:inner}}
 function buildSlides(){
   var S=[],k=kpis(),top=D.projects.slice().sort(function(a,b){return vol(b)-vol(a)}),P=D.projects,c=function(s){return P.filter(function(p){return stat(p)===s}).length};
-  S.push(slideWrap('<div class="kick">Portfolio roadmap</div><h2>'+esc(N.title||topHeadline())+'</h2><p style="font-size:22px;color:var(--ink2);margin:0">'+esc(windowLabel())+' \u00B7 '+P.length+' projects \u00B7 '+fmt(D.meta.sources.mem_obs)+' observations, '+fmt(D.meta.sources.git_commits)+' commits</p>','title'));
-  S.push(slideWrap('<div class="kick">Executive summary</div><h2>'+esc(c('active')+' of '+P.length+' projects are moving; '+(k.mom==null?'momentum is flat':'memory activity is '+(k.mom>=0?'up ':'down ')+pctStr(Math.abs(k.mom))))+'</h2><div class="body"><ul class="big">'+execBullets().map(function(b){return '<li>'+esc(b)+'</li>'}).join('')+'</ul>'+kpiTiles()+'</div>'));
-  S.push(slideWrap('<div class="kick">Portfolio roadmap</div><h2>'+esc(c('dormant')>c('active')?c('dormant')+' projects have gone quiet while '+c('active')+' carry the work':c('active')+' projects are live; '+c('dormant')+' have gone quiet')+'</h2><div class="body"><div class="g-scroll" style="overflow:hidden">'+gantt(lanesFor(14),{cw:Math.floor((1152-150)/weekList().length),laneH:30,compact:true})+'</div><div style="margin-top:10px">'+ganttLegend()+'</div></div>'));
+  S.push(slideWrap('<div class="kick">'+esc(TTL())+'</div><h2>'+esc(N.title||topHeadline())+'</h2><p style="font-size:22px;color:var(--ink2);margin:0">'+esc(windowLabel())+' \u00B7 '+P.length+' '+UL()+' \u00B7 '+fmt(D.meta.sources.mem_obs)+' observations, '+fmt(D.meta.sources.git_commits)+' commits</p>','title'));
+  S.push(slideWrap('<div class="kick">Executive summary</div><h2>'+esc(c('active')+' of '+P.length+' '+UL()+' are moving; '+(k.mom==null?'momentum is flat':'memory activity is '+(k.mom>=0?'up ':'down ')+pctStr(Math.abs(k.mom))))+'</h2><div class="body"><ul class="big">'+execBullets().map(function(b){return '<li>'+esc(b)+'</li>'}).join('')+'</ul>'+kpiTiles()+'</div>'));
+  S.push(slideWrap('<div class="kick">'+esc(TTL())+'</div><h2>'+esc(laneTitle(P,c))+'</h2><div class="body"><div class="g-scroll" style="overflow:hidden">'+gantt(lanesFor(14),{cw:Math.floor((1152-150)/weekList().length),laneH:30,compact:true})+'</div><div style="margin-top:10px">'+ganttLegend()+'</div></div>'));
   var mv=movers(),li=function(a,ic){return a.length?a.map(function(x){return '<div class="mv"><i>'+ic+'</i><span class="nm">'+esc(x.p.name)+'</span><span style="color:var(--ink2)">'+pctStr(x.d)+' <span style="color:var(--muted);font-size:13px">('+x.p.prior4+' \u2192 '+x.p.recent4+' '+esc(x.p.momentum_unit||'')+')</span></span></div>'}).join(''):'<p style="color:var(--muted)">None</p>'};
-  S.push(slideWrap('<div class="kick">Momentum \u00B7 portfolio unit: memory observations</div><h2>'+esc(k.mom==null?'Weekly activity across the portfolio':'Memory activity is '+(k.mom>=0?'up ':'down ')+pctStr(Math.abs(k.mom))+' on the prior four weeks')+'</h2><div class="body"><div style="display:flex;gap:32px"><div style="flex:none">'+colChart(720,360)+'</div><div style="flex:1"><div class="kick">Climbing</div>'+li(mv.up,'\u25B2')+'<div class="kick" style="margin-top:20px">Sliding</div>'+li(mv.down,'\u25BC')+'<p style="font-size:12px;color:var(--muted);margin-top:18px;max-width:380px">Each project is measured against its own baseline (commits where it has a repo, otherwise memory observations): last 4 complete weeks vs the 4 before, minimum baseline '+((D.portfolio.momentum||{}).min_baseline||20)+' units, display capped at +500%. Chart: all memory observations per week, hatched = current week in progress (excluded).</p></div></div></div>'));
+  S.push(slideWrap('<div class="kick">Momentum \u00B7 '+(FOC()?'unit: mem observations in these lanes':'portfolio unit: memory observations')+'</div><h2>'+esc(k.mom==null?'Weekly activity across '+(FOC()?'these '+UL():'the portfolio'):'Memory activity is '+(k.mom>=0?'up ':'down ')+pctStr(Math.abs(k.mom))+' on the prior four weeks')+'</h2><div class="body"><div style="display:flex;gap:32px"><div style="flex:none">'+colChart(720,360)+'</div><div style="flex:1"><div class="kick">Climbing</div>'+li(mv.up,'\u25B2')+'<div class="kick" style="margin-top:20px">Sliding</div>'+li(mv.down,'\u25BC')+'<p style="font-size:12px;color:var(--muted);margin-top:18px;max-width:380px">Each project is measured against its own baseline (commits where it has a repo, otherwise memory observations): last 4 complete weeks vs the 4 before, minimum baseline '+((D.portfolio.momentum||{}).min_baseline||20)+' units, display capped at +500%. Chart: '+(FOC()?'memory observations in these lanes':'all memory observations')+' per week, hatched = current week in progress (excluded).</p></div></div></div>'));
   top.slice(0,8).forEach(function(p){
     var rk=risks(p).slice(0,3),nx=nextList(p).slice(0,3);
     var ms=p.milestones.slice().sort(function(a,b){return a.date<b.date?1:-1}).slice(0,5);
@@ -373,7 +380,7 @@ function buildSlides(){
 }
 function renderDeck(){
   var S=buildSlides();deckCount=S.length;if(slideIdx>=deckCount)slideIdx=deckCount-1;
-  $('#deck').innerHTML='<div class="viewport" id="vp"><div class="scaler" id="scaler">'+S.map(function(s,i){return '<div class="slide '+s.cls+'" data-i="'+i+'">'+s.html+'<div class="sfoot"><span>Roadmap \u00B7 '+esc(windowLabel())+(narrNote()?' \u00B7 '+narrNote():'')+'</span><span>'+(i+1)+' / '+S.length+'</span></div></div>'}).join('')+'</div></div>'
+  $('#deck').innerHTML='<div class="viewport" id="vp"><div class="scaler" id="scaler">'+S.map(function(s,i){return '<div class="slide '+s.cls+'" data-i="'+i+'">'+s.html+'<div class="sfoot"><span>'+esc(TTL())+' \u00B7 '+esc(windowLabel())+(narrNote()?' \u00B7 '+narrNote():'')+'</span><span>'+(i+1)+' / '+S.length+'</span></div></div>'}).join('')+'</div></div>'
    +'<div class="deckbar"><button id="dPrev">\u2190 Prev</button><button id="dNext">Next \u2192</button><span id="dCnt"></span><span class="sp"></span><button id="dPrint">Print / PDF</button><button id="dDash">Dashboard</button></div>';
   $('#dPrev').onclick=function(){go(-1)};$('#dNext').onclick=function(){go(1)};$('#dPrint').onclick=function(){window.print()};$('#dDash').onclick=function(){setView('dash')};
   $('#vp').addEventListener('click',function(e){if(e.target.closest('button'))return;var r=this.getBoundingClientRect();go(e.clientX-r.left<r.width*0.33?-1:1)});
@@ -384,6 +391,9 @@ function showSlide(){document.querySelectorAll('.slide').forEach(function(e){e.c
 function go(d){slideIdx=Math.max(0,Math.min(deckCount-1,slideIdx+d));showSlide()}
 
 /* ---------- shell ---------- */
+function FOC(){return !!(D.meta&&D.meta.focus)}
+function UL(){return (D.meta&&D.meta.unit_label)||'projects'}
+function TTL(){return (D.meta&&D.meta.title)||'Roadmap'}
 function setView(v){view=v;document.body.classList.toggle('deckmode',v==='deck');if(v==='deck'){renderDeck()}else renderDash();try{location.hash=v==='deck'?'#deck':''}catch(e){}}
 function cycleTheme(){var r=document.documentElement,cur=r.getAttribute('data-theme');var nx=cur==='dark'?'light':(cur==='light'?null:'dark');if(nx)r.setAttribute('data-theme',nx);else r.removeAttribute('data-theme');try{localStorage.setItem('roadmap-theme',nx||'')}catch(e){}}
 function updateStamp(){
@@ -427,7 +437,7 @@ HTML = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Roadmap</title>
+<title>__TITLE__</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
 <style>__CSS__</style>
@@ -476,7 +486,7 @@ def render(out, redact=True):
     data = data.replace("</", "<\\/").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
     css = CSS.replace("__LIGHT__", LIGHT).replace("__DARK__", DARK)
     js = JS.replace("__DATA__", data)
-    html = HTML.replace("__CSS__", css).replace("__JS__", js)
+    html = HTML.replace("__TITLE__", _html.escape((roadmap.get("meta") or {}).get("title") or "Roadmap")).replace("__CSS__", css).replace("__JS__", js)
     path = os.path.join(out, "index.html")
     collect.atomic_write(path, html)
     return path
