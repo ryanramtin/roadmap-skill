@@ -63,7 +63,7 @@ python3 scripts/render.py --out ~/.roadmap/ok-stewie
 A focus file is a lane map like aliases.json, with `drop_patterns: [".*"]` so everything else stays off the board. KPIs, momentum and agent mix are scoped to the listed lanes, and the copy says "workstreams". Write the focus narrative into that out dir. Copy `focus-ok-stewie.json` to make one for another project.
 
 ## Hard rules
-- **Privacy:** collect.py drops SAM / companion / private-mode text by default (denylist constant `REDACT_DENYLIST` / `DENY_RE` in collect.py; redacted items still count in every total, only their text is withheld), and masks emails, phones and tokens. Never pass `--no-redact` when the output will be published. SAM content never goes into Artifacts.
+- **Privacy:** collect.py drops SAM / companion / private-mode text by default (patterns in gitignored `denylist.local.txt` at the skill root, one regex per line; collect.py refuses to run if it is missing or empty; redacted items still count in every total, only their text is withheld), and masks emails, phones and tokens. Never pass `--no-redact` when the output will be published. SAM content never goes into Artifacts.
 - **Read-only:** the claude-mem DB opens with `mode=ro` and git is `log` only. Never write to repos, ATTIC or the mem DB.
 - **Bounded:** at most 14 Gantt lanes (the rest roll into "Other") and at most 8 project slides.
 - If attribution coverage is low, say so in the exec summary. Don't hide it. Improve it by adding `keywords` and `exact` names to aliases.json.

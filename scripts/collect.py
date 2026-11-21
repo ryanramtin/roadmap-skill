@@ -27,15 +27,22 @@ TOMB_GLOBS = ["~/Desktop/Projects/*.ARCHIVED.txt", "~/Desktop/Projects/*.ARCHIVE
 
 # ---------------------------------------------------------------- redaction
 # Private companion-mode content must never be emitted. Extend freely.
-REDACT_DENYLIST = [
-    r"\bsam\b", r"girlfriend", r"gf mode", r"sexy", r"spicy", r"heat ladder",
-    r"heat-ladder", r"nsfw", r"explicit", r"lingerie", r"nude", r"flirt",
-    r"companion mode", r"sam-harbor", r"private mode", r"private chat", r"kink",
-    # broader SAM-adjacent vocabulary (2026-11-20: "private pack prompt (persona/heat/affect/bond…)" leaked)
-    r"private pack", r"private gate", r"\bheat\b", r"\bbond\b", r"\baffect\b", r"\bpersona",
-    r"emotional depth", r"ex machina", r"\bher\b", r"intimate", r"romanc", r"\berotic",
-    r"partner voice", r"\bpartner pack", r"\bwren\b", r"desire", r"seduc",
-]
+DENYLIST_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "denylist.local.txt")
+
+
+def _load_denylist():
+    """Private-text patterns live in a gitignored file so the repo never carries them. Fail closed."""
+    try:
+        with open(DENYLIST_FILE) as f:
+            pats = [ln.strip() for ln in f if ln.strip() and not ln.lstrip().startswith("#")]
+    except OSError:
+        pats = []
+    if not pats:
+        sys.exit("roadmap: %s missing or empty; refusing to run without a redaction denylist" % DENYLIST_FILE)
+    return pats
+
+
+REDACT_DENYLIST = _load_denylist()
 DENY_RE = re.compile("|".join(REDACT_DENYLIST), re.I)
 MASKS = [
     re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"),
